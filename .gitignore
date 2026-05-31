@@ -1,0 +1,5 @@
+model/
+visual_navigation/.venv/
+**/__pycache__/
+visual_navigation/.pytest_cache/
+visual_navigation/model/model.safetensors
