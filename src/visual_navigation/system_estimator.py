@@ -3,13 +3,13 @@ from typing import Callable
 
 import numpy as np
 from scipy.optimize import minimize
-from src.update_method import UpdateMethod
-from src.gaussian import Gaussian
-from src.rotations import Rotations
-from src.measurement import Measurement
-from src.sensor_type import SensorType
-from src.measurement_models import MeasurementModels
-from src.measurement_flow_bundle import MeasurementFlowBundle
+from .update_method import UpdateMethod
+from .gaussian import Gaussian
+from .rotations import Rotations
+from .measurement import Measurement
+from .sensor_type import SensorType
+from .measurement_models import MeasurementModels
+from .measurement_flow_bundle import MeasurementFlowBundle
 
 previous_time = 0
 

@@ -1,5 +1,7 @@
 model/
-visual_navigation/.venv/
+**/.venv/
 **/__pycache__/
-visual_navigation/.pytest_cache/
-visual_navigation/model/model.safetensors
+**/visual_navigation.egg-info/
+src/visual_navigation/.pytest_cache/
+
+src/visual_navigation/model/model.safetensors

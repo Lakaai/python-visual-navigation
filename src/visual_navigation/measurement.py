@@ -5,12 +5,12 @@ from typing import Union
 
 import numpy as np
 
-from src.gaussian import Gaussian
+from .gaussian import Gaussian
 
 from numpy.typing import NDArray
 
-from src.sensor_type import SensorType
-from src.measurement_flow_bundle import MeasurementFlowBundle
+from .sensor_type import SensorType
+from .measurement_flow_bundle import MeasurementFlowBundle
 e3 = np.array([0.0, 0.0, 1.0])
 
 @dataclass

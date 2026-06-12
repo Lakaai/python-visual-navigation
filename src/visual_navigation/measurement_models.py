@@ -4,7 +4,7 @@ Measurement models for mapping the system state vector to sensor measurements.
 
 import numpy as np
 
-from src.rotations import Rotations
+from .rotations import Rotations
 
 
 class MeasurementModels:

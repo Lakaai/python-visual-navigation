@@ -2,35 +2,19 @@ import cv2
 import numpy as np
 
 import navpy
-from src.gaussian import Gaussian
-from src.srt_parser import parse_srt
-from src.system_estimator import SystemEstimator
-from src.measurement import Measurement, MeasurementBaro
-from src.rerun_helpers import RerunHelper
-from src.update_method import UpdateMethod
-from src.sensor_type import SensorType
-from src.rotations import Rotations, RotationMatrix
-from src.measurement_flow_bundle import MeasurementFlowBundle
-from src.camera import Camera
+from .gaussian import Gaussian
+from .srt_parser import parse_srt
+from .system_estimator import SystemEstimator
+from .measurement import Measurement, MeasurementBaro
+from .rerun_helpers import RerunHelper
+from .update_method import UpdateMethod
+from .sensor_type import SensorType
+from .rotations import Rotations
+from .measurement_flow_bundle import MeasurementFlowBundle
+from .camera import Camera
 import rerun as rr
-import rerun.blueprint as rrb
-import argparse
+
 import time
-import json
-
-def construct_camera(path):
-    # Load camera parameters from JSON file
-    with open(path, 'r') as f:
-        camera_params = json.load(f)
-
-    camera_matrix = np.array(camera_params['camera_matrix'], dtype=np.float32)
-    distortion_coeffs = np.array(camera_params['dist_coeffs'], dtype=np.float32)
-    translation_vector = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    rotation_matrix = RotationMatrix(np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], dtype=np.float32))
-
-    camera = Camera(matrix=camera_matrix,distortion_coeffs=distortion_coeffs, translation_vector= translation_vector, rotation_matrix=rotation_matrix)
-
-    return camera
 
 def construct_initial_density():
     mu = np.zeros(18)
@@ -59,50 +43,23 @@ def construct_initial_density():
 
     return Gaussian.from_moment(mu, P)
 
-measurement_data = parse_srt("../data/outdoor/flight.SRT")
-
-use_rerun = True
-
-if use_rerun:
-
-    rr.init("Visual Navigation", spawn=True)
-
-    blueprint = rrb.Horizontal(
-        rrb.Spatial3DView(origin="/world", name="World"),
-        rrb.Spatial2DView(origin="/world/camera", name="Camera"),
-        # rrb.Spatial2DView(origin="/image", name="Frame", contents=["/image/**"]), 
-    )
-
-    # Create empty arg parser for rerun
-    parser = argparse.ArgumentParser(description="")
-
-    rr.script_add_args(parser)
-
-    args = parser.parse_args()
-
-    rr.script_setup(args, "Visual Navigation", default_blueprint=blueprint)
-
-    # Intialise world frame as NED (Right-Handed Z-Down)
-    rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Z_DOWN, static=True)
+def setup_rerun():
+    """
+    """
     rerun_helper = RerunHelper()
     rerun_helper.update_inertial_frame(axis_scale=2)
 
-def run_visual_navigation():
-    cap = cv2.VideoCapture("data/outdoor/calibration.MOV")
+    return rerun_helper
 
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    print(f"Video resolution: {width}x{height}, Number of frames: {num_frames}")
-    exit()
+def run_outdoor_optical_flow(video_path, camera: Camera, use_rerun: bool = False):
 
-    if not cap.isOpened():
-        print("Error: Could not open video file.")
-        exit()
+    measurement_data = parse_srt("/home/luke/MCHA4400/data/outdoor/flight.SRT")
+
+    if use_rerun:
+        rerun_helper = setup_rerun()
 
     initial_density = construct_initial_density()
-    camera = construct_camera()
 
     system = SystemEstimator(initial_density)
 
@@ -116,16 +73,25 @@ def run_visual_navigation():
     previous_alt = 0
     rQOikm1 = None
 
+    cap = cv2.VideoCapture(video_path)
+
+    if not cap.isOpened():
+        print("Error: Could not open video file.")
+        exit()
+
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    print(f"Video resolution: {width}x{height}, Number of frames: {num_frames}")
+
     for i in range(len(measurement_data.timestamp)):
         
-
-        # Read frame 
         ret, frame = cap.read()
 
         if not ret:
             break  # No more frames therefore end of video
 
-        # Add GPS data to the rerun timeline.
         alt = measurement_data.altitude[i]
         lat = measurement_data.latitude[i]
         lon = measurement_data.longitude[i]
@@ -313,7 +279,7 @@ def draw_horizon(frame, frame_width, frame_height, system, camera):
     camera_horizontal_vectors = []
     num_samples = 60
     R = Rotations.rpy2rot(rpy, order='zxy').R
-    K = CAMERA.matrix
+    K = camera.matrix
     # Note the state vector roll pitch yaw states encode the rotation matrix Rnb, that is the rotation from world basis vectors into body basis vectors / frame 
     # Rab is the matrix that rotates the vectors of the basis a into the vectors of the basis b
     # Rnb = Rotations.rpy2rot(rpy).R          # {n} -> {b}    (world to body)
@@ -355,5 +321,3 @@ def draw_horizon(frame, frame_width, frame_height, system, camera):
     # )
 
     return frame
-
-run_visual_navigation()

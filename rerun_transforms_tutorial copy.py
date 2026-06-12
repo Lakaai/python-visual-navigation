@@ -10,7 +10,7 @@ import argparse
 import numpy as np
 import cv2
 from scipy.spatial.transform import Rotation
-from src.camera import CAMERA
+from src.visual_navigation.camera import CAMERA
 
 def draw_horizon(euler_angles, image, image_height, image_width):
     """
@@ -36,8 +36,6 @@ def draw_horizon(euler_angles, image, image_height, image_width):
         dir_c = [np.sin(angle), 0, np.cos(angle)]   # Camera XZ plane
        
         dir_c = R.apply(dir_c)
-        
-        
 
         if dir_c[2] > 0.02:  
             camera_horizontal_vectors.append(dir_c)

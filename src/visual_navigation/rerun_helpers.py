@@ -3,9 +3,9 @@
 import rerun as rr
 import numpy as np
 import cv2
-from src.system_estimator import SystemEstimator
+from .system_estimator import SystemEstimator
 from scipy.spatial.transform import Rotation
-from src.camera import Camera
+from .camera import Camera
 
 class RerunHelper:
     """

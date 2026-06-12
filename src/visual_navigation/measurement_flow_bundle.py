@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
-from src.camera import Camera
-from src.gaussian_vector import GaussianVector
-from src.rotations import Rotations
+from .camera import Camera
+from .gaussian_vector import GaussianVector
+from .rotations import Rotations
 # from scipy.spatial.transform import Rotation
 
 DIVISOR = 2
