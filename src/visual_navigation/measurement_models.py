@@ -34,8 +34,8 @@ class MeasurementModels:
         :return: Position [x, y, z] in NED coordinates.
         :rtype: np.ndarray
         """
-        print("GPS measurement model called with state: ", x)
-        print("Returning GPS measurement: ", np.concatenate([x[6:9], x[3:6]]))
+        # print("GPS measurement model called with state: ", x)
+        # print("Returning GPS measurement: ", np.concatenate([x[6:9], x[3:6]]))
         return np.concatenate([x[6:9], x[3:6]])
 
     @staticmethod

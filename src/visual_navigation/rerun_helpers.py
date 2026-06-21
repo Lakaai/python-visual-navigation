@@ -79,8 +79,8 @@ class RerunHelper:
         if len(self.previous_positions) > 0:
             rr.log("world/inertial_frame/previous_body_position", rr.Points3D(np.array(self.previous_positions), colors=np.array([[255, 0, 0]]), radii=0.05))
 
-        Rnb = Rotation.from_euler('xyz', system.density.mean[9:12])
-        rBNn=system.density.mean[6:9]
+        Rnb = Rotation.from_euler('xyz', system.state_distribution.mean[9:12])
+        rBNn=system.state_distribution.mean[6:9]
         rr.log(
             "world/inertial_frame/body_frame",
             rr.Transform3D(

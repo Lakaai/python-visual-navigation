@@ -3,8 +3,9 @@ import numpy as np
 from .camera import Camera
 from .gaussian_vector import GaussianVector
 from .rotations import Rotations
+from .measurement import Measurement
 # from scipy.spatial.transform import Rotation
-
+from dataclasses import dataclass, field
 DIVISOR = 2
 MAX_NUM_FEATURES = 1500
 MIN_NUM_FEATURES = 1100
@@ -13,23 +14,36 @@ MIN_DISTANCE_PIXELS = 15
 
 e3 = np.array([0.0, 0.0, 1.0])
 
-class MeasurementFlowBundle:
+@dataclass
+class MeasurementFlowBundle(Measurement):
     """
     TODO: 
     """
-    def __init__(self, time: float, imgk_raw: np.ndarray, imgkm1_raw: np.ndarray, rQOikm1: np.ndarray, camera: Camera):
-        self.time = time
-        self.rQOikm1 = rQOikm1
-        self.rQOik = None
-        self.pkm1 = None # Homogeneous coordinates of features in previous frame that satisfy the epipolar constraint
-        self.pk = None # Homogeneous coordinates of features in current frame that satisfy the epipolar constraint
-        self.imgk_raw = imgk_raw
-        self.camera = camera
-        self.sigma = 2.25 # Standard deviation in pixel units
-        
+    # def __init__(self, imgk_raw: np.ndarray, imgkm1_raw: np.ndarray, rQOikm1: np.ndarray, camera: Camera):
+    camera: Camera
+    imgk_raw: np.ndarray
+    imgkm1_raw: np.ndarray | None = None
+    rQOikm1: np.ndarray | None = None
+    
+    
 
+    # Computed fields
+    sigma = 2.25 # Standard deviation in pixel units
+    rQOik: np.ndarray = field(default=None, init=False)
+    pk: np.ndarray = field(default=None, init=False) # Homogeneous coordinates of features in current frame that satisfy the epipolar constraint
+    pkm1: np.ndarray = field(default=None, init=False) # Homogeneous coordinates of features in previous frame that satisfy the epipolar constraint
+    mask: np.ndarray = field(default=None, init=False)
+    F: np.ndarray = field(default=None, init=False)
+
+    def __post_init__(self):
+        """
+        
+        """
+        self.construct_measurement(self.imgk_raw, self.imgkm1_raw, self.rQOikm1, self.camera)
+    
+    def construct_measurement(self, imgk_raw: np.ndarray, imgkm1_raw: np.ndarray, rQOikm1: np.ndarray, camera: Camera):
         imgk_gray = cv2.cvtColor(imgk_raw, cv2.COLOR_BGR2GRAY)
-       
+        
         # First frame, initialise features
         if rQOikm1 is None:
             print("First frame, initialising features!")
@@ -71,8 +85,8 @@ class MeasurementFlowBundle:
                 self.rQOik = self.detect_new_features(imgk_gray)
 
             # Calculate undistorted feature locations
-            rQbarOik = cv2.undistortPoints(self.rQOik,  self.camera.matrix, self.camera.distortion_coeffs, P=self.camera.matrix)
-            rQbarOikm1 = cv2.undistortPoints(rQOikm1, self.camera.matrix, self.camera.distortion_coeffs, P=self.camera.matrix)
+            rQbarOik = cv2.undistortPoints(self.rQOik,  camera.matrix, camera.distortion_coeffs, P=camera.matrix)
+            rQbarOikm1 = cv2.undistortPoints(rQOikm1, camera.matrix, camera.distortion_coeffs, P=camera.matrix)
 
             # Use RANSAC to find fundamental matrix and determine inliers
             self.F, mask = cv2.findFundamentalMat(rQbarOikm1, rQbarOik, cv2.FM_RANSAC, ransacReprojThreshold=1.0, confidence=0.99)
@@ -97,6 +111,12 @@ class MeasurementFlowBundle:
             self.pk   = np.vstack([inliers_k,   np.ones((1, num_inliers))])
             self.pkm1 = np.vstack([inliers_km1, np.ones((1, num_inliers))])
         return
+
+    def get_process_string(self) -> str:
+        """
+        
+        """
+        return "Processing optical flow measurement:"
     
     def detect_new_features(self, imgk_gray):
         print("Not enough features: ",  self.rQOikm1.shape[0])
